@@ -1,0 +1,38 @@
+package hooks;
+
+import context.TestContext;
+import io.cucumber.java.After;
+import io.cucumber.java.Before;
+import io.cucumber.java.Scenario;
+
+/**
+ * Hooks do Cucumber — executados antes e depois de cada cenário.
+ * <p>
+ * O {@code @Before} é chamado antes de cada cenário (não precisa fazer nada,
+ * o TestContext é inicializado lazy via ThreadLocal).
+ * </p>
+ * <p>
+ * O {@code @After} limpa o TestContext para evitar vazamento de estado
+ * entre cenários.
+ * </p>
+ */
+public class Hooks {
+
+    @Before
+    public void setUp(Scenario scenario) {
+        // TestContext é criado automaticamente via ThreadLocal.withInitial()
+        // Log opcional para debug
+        System.out.println("[Cucumber] Iniciando cenário: " + scenario.getName());
+    }
+
+    @After
+    public void tearDown(Scenario scenario) {
+        // Log do status do cenário
+        if (scenario.isFailed()) {
+            System.out.println("[Cucumber] FALHOU: " + scenario.getName());
+        }
+
+        // Limpa o contexto para o próximo cenário
+        TestContext.clear();
+    }
+}

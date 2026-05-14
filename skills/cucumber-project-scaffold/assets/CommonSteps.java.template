@@ -1,0 +1,294 @@
+package steps;
+
+import context.TestContext;
+import io.cucumber.java.pt.Dado;
+import io.cucumber.java.pt.Entao;
+import io.cucumber.java.pt.Quando;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Passos compartilhados entre todas as features.
+ * <p>
+ * Contém steps genéricos de HTTP (base URL, headers, payload, requisições,
+ * asserções de resposta). Steps específicos de cada feature devem ficar
+ * em classes separadas (ex: {@code PetSteps.java}, {@code StoreSteps.java}).
+ * </p>
+ *
+ * <p><b>IMPORTANTE — Tipagem Swagger → Java:</b></p>
+ * <ul>
+ *   <li>{@code integer (int32)} → {@code int/Integer} → {@code .getInt()}</li>
+ *   <li>{@code integer (int64)} → {@code long/Long} → {@code .getLong()}</li>
+ *   <li>{@code number (float)} → {@code float/Float} → {@code .getFloat()}</li>
+ *   <li>{@code number (double)} → {@code double/Double} → {@code .getDouble()}</li>
+ *   <li>{@code string} → {@code String} → {@code .getString()}</li>
+ *   <li>{@code boolean} → {@code boolean/Boolean} → {@code .getBoolean()}</li>
+ * </ul>
+ */
+public class CommonSteps {
+
+    // ============================================================
+    // GIVEN — Preparação do contexto
+    // ============================================================
+
+    /**
+     * Define a URL base para todas as requisições do cenário.
+     * Usado no {@code Background} de cada feature.
+     */
+    @Dado("a URL base da API é {string}")
+    public void setBaseUrl(String url) {
+        TestContext.get().setBaseUrl(url);
+    }
+
+    /**
+     * Define headers HTTP a partir de um DataTable {@code | name | value |}.
+     * Exemplo:
+     * <pre>
+     * Given eu tenha os headers:
+     *   | name         | value            |
+     *   | Content-Type | application/json |
+     *   | api_key      | special-key      |
+     * </pre>
+     */
+    @Dado("eu tenha os headers:")
+    public void setHeaders(List<Map<String, String>> rows) {
+        Map<String, String> headers = new HashMap<>();
+        for (Map<String, String> row : rows) {
+            headers.put(row.get("name"), row.get("value"));
+        }
+        TestContext.get().setHeaders(headers);
+    }
+
+    /**
+     * Define o payload (corpo JSON) da requisição.
+     * Exemplo:
+     * <pre>
+     * Given eu tenha o payload:
+     *   """json
+     *   { "name": "Bud", "status": "available" }
+     *   """
+     * </pre>
+     */
+    @Dado("eu tenha o payload:")
+    public void setPayload(String payload) {
+        TestContext.get().setRequestPayload(payload);
+    }
+
+    /**
+     * Define form params a partir de DataTable (pode ter chaves duplicadas).
+     * Usa {@code List<Map<String, String>>} em vez de {@code Map} para evitar
+     * {@code CucumberDataTableException: duplicate key}.
+     * <p>
+     * <b>Padrão Two-Step:</b> O Given armazena, o When lê do contexto.
+     * Exemplo:
+     * <pre>
+     * Given eu tenha os form params:
+     *   | name   | value     |
+     *   | name   | Bud       |
+     *   | status | available |
+     * When envio uma requisição "POST" para "/pet/1" com form params
+     * </pre>
+     */
+    @Dado("eu tenha os form params:")
+    public void setFormParams(List<Map<String, String>> rows) {
+        TestContext.get().setFormParams(rows);
+    }
+
+    // ============================================================
+    // WHEN — Execução das requisições HTTP
+    // ============================================================
+
+    /**
+     * Envia uma requisição HTTP simples (sem body).
+     */
+    @Quando("envio uma requisição {string} para {string}")
+    public void sendRequest(String method, String endpoint) {
+        RequestSpecification request = buildBaseRequest();
+        Response response = execute(request, method, endpoint);
+        TestContext.get().setResponse(response);
+    }
+
+    /**
+     * Envia uma requisição HTTP com payload JSON no body.
+     * O payload deve ter sido definido previamente com {@code Given eu tenha o payload:}.
+     */
+    @Quando("envio uma requisição {string} para {string} com payload")
+    public void sendRequestWithPayload(String method, String endpoint) {
+        RequestSpecification request = buildBaseRequest()
+                .contentType(ContentType.JSON)
+                .body(TestContext.get().getRequestPayload());
+        Response response = execute(request, method, endpoint);
+        TestContext.get().setResponse(response);
+    }
+
+    /**
+     * Envia uma requisição HTTP com form params (Two-Step Pattern).
+     * Os form params devem ter sido definidos com {@code Given eu tenha os form params:}.
+     * <p>
+     * NÃO recebe DataTable como parâmetro — lê do TestContext.
+     */
+    @Quando("envio uma requisição {string} para {string} com form params")
+    public void sendRequestWithFormParams(String method, String endpoint) {
+        List<Map<String, String>> rows = TestContext.get().getFormParams();
+        RequestSpecification request = buildBaseRequest();
+        for (Map<String, String> row : rows) {
+            request.formParam(row.get("name"), row.get("value"));
+        }
+        Response response = execute(request, method, endpoint);
+        TestContext.get().setResponse(response);
+    }
+
+    /**
+     * Envia uma requisição HTTP com form params (Self-Contained Pattern).
+     * O DataTable está no próprio step When.
+     */
+    @Quando("envio uma requisição {string} para {string} com form params:")
+    public void sendRequestWithInlineFormParams(String method, String endpoint,
+                                                 List<Map<String, String>> rows) {
+        RequestSpecification request = buildBaseRequest();
+        for (Map<String, String> row : rows) {
+            request.formParam(row.get("name"), row.get("value"));
+        }
+        Response response = execute(request, method, endpoint);
+        TestContext.get().setResponse(response);
+    }
+
+    // ============================================================
+    // THEN — Asserções sobre a resposta
+    // ============================================================
+
+    /** Verifica o status code da resposta. */
+    @Entao("o status code da resposta deve ser {int}")
+    public void verifyStatusCode(int expectedStatus) {
+        Response response = TestContext.get().getResponse();
+        assertThat(response.getStatusCode())
+                .as("Status code esperado: %d, mas foi: %d", expectedStatus, response.getStatusCode())
+                .isEqualTo(expectedStatus);
+    }
+
+    /** Verifica campo inteiro (int32). */
+    @Entao("o campo {string} deve ser {int}")
+    public void verifyIntField(String jsonPath, int expected) {
+        Response response = TestContext.get().getResponse();
+        assertThat(response.jsonPath().getInt(jsonPath)).isEqualTo(expected);
+    }
+
+    /** Verifica campo longo (int64). */
+    @Entao("o campo {string} deve ser {long}")
+    public void verifyLongField(String jsonPath, long expected) {
+        Response response = TestContext.get().getResponse();
+        assertThat(response.jsonPath().getLong(jsonPath)).isEqualTo(expected);
+    }
+
+    /** Verifica campo string. */
+    @Entao("o campo {string} deve ser {string}")
+    public void verifyStringField(String jsonPath, String expected) {
+        Response response = TestContext.get().getResponse();
+        assertThat(response.jsonPath().getString(jsonPath)).isEqualTo(expected);
+    }
+
+    /** Verifica campo booleano verdadeiro. */
+    @Entao("o campo {string} deve ser verdadeiro")
+    public void verifyBooleanFieldTrue(String jsonPath) {
+        Response response = TestContext.get().getResponse();
+        assertThat(response.jsonPath().getBoolean(jsonPath)).isTrue();
+    }
+
+    /** Verifica campo booleano falso. */
+    @Entao("o campo {string} deve ser falso")
+    public void verifyBooleanFieldFalse(String jsonPath) {
+        Response response = TestContext.get().getResponse();
+        assertThat(response.jsonPath().getBoolean(jsonPath)).isFalse();
+    }
+
+    /** Verifica que um campo string contém determinada substring. */
+    @Entao("o campo {string} deve conter {string}")
+    public void verifyFieldContains(String jsonPath, String substring) {
+        Response response = TestContext.get().getResponse();
+        assertThat(response.jsonPath().getString(jsonPath)).contains(substring);
+    }
+
+    /** Verifica tamanho de um array JSON. */
+    @Entao("o array {string} deve ter tamanho {int}")
+    public void verifyArraySize(String jsonPath, int expectedSize) {
+        Response response = TestContext.get().getResponse();
+        List<?> list = response.jsonPath().getList(jsonPath);
+        assertThat(list).hasSize(expectedSize);
+    }
+
+    /** Verifica que um array JSON não está vazio. */
+    @Entao("o array {string} não deve estar vazio")
+    public void verifyArrayNotEmpty(String jsonPath) {
+        Response response = TestContext.get().getResponse();
+        List<?> list = response.jsonPath().getList(jsonPath);
+        assertThat(list).isNotEmpty();
+    }
+
+    /** Verifica header da resposta. */
+    @Entao("o header {string} deve ser {string}")
+    public void verifyHeader(String headerName, String expectedValue) {
+        Response response = TestContext.get().getResponse();
+        assertThat(response.getHeader(headerName)).isEqualTo(expectedValue);
+    }
+
+    /** Verifica que o campo existe (não é null). */
+    @Entao("o campo {string} deve existir")
+    public void verifyFieldExists(String jsonPath) {
+        Response response = TestContext.get().getResponse();
+        assertThat(response.jsonPath().get(jsonPath)).isNotNull();
+    }
+
+    /** Verifica que o campo é null. */
+    @Entao("o campo {string} deve ser nulo")
+    public void verifyFieldIsNull(String jsonPath) {
+        Response response = TestContext.get().getResponse();
+        assertThat(response.jsonPath().get(jsonPath)).isNull();
+    }
+
+    /** Verifica tempo de resposta. */
+    @Entao("o tempo de resposta deve ser menor que {long} ms")
+    public void verifyResponseTimeLessThan(long maxMillis) {
+        Response response = TestContext.get().getResponse();
+        assertThat(response.getTime()).isLessThan(maxMillis);
+    }
+
+    // ============================================================
+    // MÉTODOS AUXILIARES
+    // ============================================================
+
+    /**
+     * Constrói o RequestSpecification base com URL e headers.
+     */
+    private RequestSpecification buildBaseRequest() {
+        return RestAssured.given()
+                .baseUri(TestContext.get().getBaseUrl())
+                .headers(TestContext.get().getHeaders())
+                .log().ifValidationFails();
+    }
+
+    /**
+     * Executa a requisição HTTP conforme o método.
+     * Suporta GET, POST, PUT, PATCH, DELETE.
+     */
+    private Response execute(RequestSpecification request, String method, String endpoint) {
+        String fullUrl = TestContext.get().getBaseUrl() + endpoint;
+        return switch (method.toUpperCase()) {
+            case "GET" -> request.get(fullUrl);
+            case "POST" -> request.post(fullUrl);
+            case "PUT" -> request.put(fullUrl);
+            case "PATCH" -> request.patch(fullUrl);
+            case "DELETE" -> request.delete(fullUrl);
+            default -> throw new IllegalArgumentException(
+                    "Método HTTP não suportado: " + method +
+                    ". Use GET, POST, PUT, PATCH ou DELETE.");
+        };
+    }
+}

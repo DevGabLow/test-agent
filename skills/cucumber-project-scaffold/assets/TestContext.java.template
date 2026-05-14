@@ -1,0 +1,132 @@
+package context;
+
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Contexto compartilhado entre steps — ThreadLocal para execução paralela segura.
+ * <p>
+ * Uso nos steps:
+ * <pre>{@code
+ * TestContext.get().setBaseUrl("https://api.example.com");
+ * Response response = TestContext.get().getResponse();
+ * }</pre>
+ * <p>
+ * Limpeza: {@link hooks.Hooks#tearDown()} chama {@link #clear()} após cada cenário.
+ */
+public class TestContext {
+
+    private static final ThreadLocal<TestContext> INSTANCE =
+            ThreadLocal.withInitial(TestContext::new);
+
+    // ========== Campos ==========
+
+    private String baseUrl;
+    private RequestSpecification request;
+    private Response response;
+    private final Map<String, Object> storage = new HashMap<>();
+    private List<Map<String, String>> formParams;
+    private String requestPayload;
+    private Map<String, String> headers = new HashMap<>();
+
+    // ========== Singleton ThreadLocal ==========
+
+    public static TestContext get() {
+        return INSTANCE.get();
+    }
+
+    public static void clear() {
+        INSTANCE.remove();
+    }
+
+    // ========== Getters & Setters ==========
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    public RequestSpecification getRequest() {
+        return request;
+    }
+
+    public void setRequest(RequestSpecification request) {
+        this.request = request;
+    }
+
+    public Response getResponse() {
+        return response;
+    }
+
+    public void setResponse(Response response) {
+        this.response = response;
+    }
+
+    /**
+     * Armazena um valor genérico no contexto.
+     * Use para compartilhar dados arbitrários entre steps do mesmo cenário.
+     */
+    public void set(String key, Object value) {
+        storage.put(key, value);
+    }
+
+    /**
+     * Recupera um valor genérico do contexto.
+     * O caller é responsável pelo cast apropriado.
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T get(String key) {
+        return (T) storage.get(key);
+    }
+
+    /**
+     * Remove um valor do contexto.
+     */
+    public void remove(String key) {
+        storage.remove(key);
+    }
+
+    /**
+     * Verifica se uma chave existe no contexto.
+     */
+    public boolean has(String key) {
+        return storage.containsKey(key);
+    }
+
+    // ========== Form Params (DataTable name|value com chaves duplicadas) ==========
+
+    public List<Map<String, String>> getFormParams() {
+        return formParams;
+    }
+
+    public void setFormParams(List<Map<String, String>> formParams) {
+        this.formParams = formParams;
+    }
+
+    // ========== Request Payload (JSON body) ==========
+
+    public String getRequestPayload() {
+        return requestPayload;
+    }
+
+    public void setRequestPayload(String requestPayload) {
+        this.requestPayload = requestPayload;
+    }
+
+    // ========== Headers ==========
+
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(Map<String, String> headers) {
+        this.headers = headers;
+    }
+}
