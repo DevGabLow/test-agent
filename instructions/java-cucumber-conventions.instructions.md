@@ -1,7 +1,5 @@
 ---
 name: Java Cucumber Conventions
----
-
 description: "Java, Cucumber, and RestAssured coding conventions for BDD API testing. Use when: writing Java test code, cucumber step definitions, RestAssured HTTP calls, BDD test implementation, Java 17+ testing patterns."
 applyTo: "src/test/java/**/*.java"
 ---

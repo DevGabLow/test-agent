@@ -1,7 +1,5 @@
 ---
 name: Gherkin Conventions
----
-
 description: "Gherkin writing conventions for Cucumber .feature files in Brazilian Portuguese. Use when: writing feature files, creating scenarios, gherkin syntax, BDD specifications, cucumber feature format."
 applyTo: "src/test/resources/features/**/*.feature"
 ---

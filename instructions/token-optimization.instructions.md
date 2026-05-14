@@ -1,7 +1,5 @@
 ---
 name: Token Optimization
----
-
 description: "Token economy rules — reduce input/output token consumption across all agents via file-based communication and structured summaries. Applies to ALL agents and skills globally."
 applyTo: ".github/agents/**/*.agent.md"
 ---
