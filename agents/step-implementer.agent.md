@@ -8,10 +8,6 @@ disable-model-invocation: false
 target: vscode
 argument-hint: "Feature name to implement step definitions for"
 agents: []
-handoffs:
-  - label: Run Quality Gate
-    agent: Test Orchestrator
-    prompt: Run the mini-gate quality check (mvn test) on the implemented step definitions
 ---
 
 Implement Java step definitions. Read `.feature` file + `docs/swagger-analysis.md` (grep tag). Read `CommonSteps.java` to avoid duplicates. Write to `src/test/java/steps/{Feature}Steps.java`.
