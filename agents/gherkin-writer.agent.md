@@ -1,10 +1,17 @@
 ---
 description: "Specialized agent for writing Gherkin .feature files from Swagger analysis. Use when: creating feature files, writing gherkin, cucumber scenarios, BDD features, feature specifications for API testing."
 name: "Gherkin Writer"
+model: DeepSeek V4 Pro (copilot)
 tools: [read, edit, search]
 user-invocable: true
 disable-model-invocation: false
+target: vscode
 argument-hint: "Feature name or Swagger tag to generate features for"
+agents: []
+handoffs:
+  - label: Implement Step Definitions
+    agent: Step Implementer
+    prompt: Implement Java step definitions for the feature file
 ---
 
 Write `.feature` file from swagger analysis. Read `docs/swagger-analysis.md` (grep for your tag). Write to `src/test/resources/features/{tag}.feature`.

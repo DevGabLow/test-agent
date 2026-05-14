@@ -1,10 +1,17 @@
 ---
 description: "Read-only agent that analyzes Swagger/OpenAPI specs (JSON/YAML) to extract endpoints, HTTP methods, parameters, request/response schemas, and authentication requirements. Use when: analyzing swagger, openapi, api spec, extracting endpoints, understanding API structure."
 name: "Swagger Analyzer"
+model: DeepSeek V4 Pro (copilot)
 tools: [read, search]
 user-invocable: true
 disable-model-invocation: false
+target: vscode
 argument-hint: "Swagger/OpenAPI file path or URL"
+agents: []
+handoffs:
+  - label: Write Gherkin Features
+    agent: Gherkin Writer
+    prompt: Generate .feature files from the swagger analysis in docs/swagger-analysis.md
 ---
 
 Read Swagger/OpenAPI spec. Extract endpoints, params, schemas, auth. Write to `docs/swagger-analysis.md`.
