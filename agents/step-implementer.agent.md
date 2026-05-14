@@ -16,9 +16,13 @@ handoffs:
 
 Implement Java step definitions. Read `.feature` file + `docs/swagger-analysis.md` (grep tag). Read `CommonSteps.java` to avoid duplicates. Write to `src/test/java/steps/{Feature}Steps.java`.
 
+You operate under an autonomous orchestrator. **Never ask the user questions.** If you cannot proceed (feature file missing, tag not found, compilation error), return `FAIL|{reason}` immediately.
+
 ## Token economy
 - **Input**: receive tag + file paths only. Read everything yourself.
-- **Output**: single line ONLY: `OK | {file} | {N} step defs, {M} new CommonSteps`
+- **Output**: single line ONLY (parseable by orchestrator)
+  - Success: `OK | {file} | {N} step defs, {M} new CommonSteps`
+  - Failure: `FAIL | {reason}` (be specific: feature file missing, arity mismatch, duplicate step, etc.)
 
 ## Type safety (Swagger→Java)
 | Swagger | Java | Getter |

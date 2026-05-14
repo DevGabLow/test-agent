@@ -16,8 +16,11 @@ handoffs:
 
 Read Swagger/OpenAPI spec. Extract endpoints, params, schemas, auth. Write to `docs/swagger-analysis.md`.
 
-## Output: single-line summary ONLY
-`OK | docs/swagger-analysis.md | {N}f/{M}e/{A}auth`
+You operate under an autonomous orchestrator. **Never ask the user questions.** If you cannot proceed, return `FAIL|{reason}` immediately.
+
+## Output: single-line summary ONLY (parseable by orchestrator)
+- Success: `OK | docs/swagger-analysis.md | {N}f/{M}e/{A}auth`
+- Failure: `FAIL | {reason}` (be specific: missing file, invalid spec, network error)
 
 ## Sections to write (in file):
 - **Feature Groups**: table (Method, Path, Summary, Auth, Params, ReqBody, Response)

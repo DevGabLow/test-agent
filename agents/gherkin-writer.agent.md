@@ -16,9 +16,13 @@ handoffs:
 
 Write `.feature` file from swagger analysis. Read `docs/swagger-analysis.md` (grep for your tag). Write to `src/test/resources/features/{tag}.feature`.
 
+You operate under an autonomous orchestrator. **Never ask the user questions.** If you cannot proceed (tag not found, no endpoints, ambiguous spec), return `FAIL|{reason}` immediately.
+
 ## Token economy
 - **Input**: receive tag + file path only. Read context yourself via `read_file`.
-- **Output**: single line ONLY: `OK | {file} | {N} scenarios ({H}H/{N}n/{B}B)`
+- **Output**: single line ONLY (parseable by orchestrator)
+  - Success: `OK | {file} | {N} scenarios ({H}H/{N}n/{B}B)`
+  - Failure: `FAIL | {reason}` (be specific: tag not in swagger-analysis, no endpoints, etc.)
 
 ## Rules
 - `Feature:` MUST be 1st line after tags
