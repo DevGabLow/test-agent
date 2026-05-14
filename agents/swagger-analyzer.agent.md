@@ -1,7 +1,7 @@
 ---
 description: "Read-only agent that analyzes Swagger/OpenAPI specs (JSON/YAML) to extract endpoints, HTTP methods, parameters, request/response schemas, and authentication requirements. Use when: analyzing swagger, openapi, api spec, extracting endpoints, understanding API structure."
 name: "Swagger Analyzer"
-model: DeepSeek V4 Pro (copilot)
+model: DeepSeek V4 Flash (deepseek-v4)
 tools: [read, search]
 user-invocable: true
 disable-model-invocation: false

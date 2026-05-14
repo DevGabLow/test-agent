@@ -1,7 +1,7 @@
 ---
 description: "Agent for implementing Java step definition classes from .feature files. Use when: creating step definitions, implementing cucumber steps, writing java glue code, RestAssured test implementation."
 name: "Step Implementer"
-model: DeepSeek V4 Pro (copilot)
+model: DeepSeek V4 Flash (deepseek-v4)
 tools: [read, edit, search]
 user-invocable: true
 disable-model-invocation: false
